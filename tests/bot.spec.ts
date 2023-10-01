@@ -15,18 +15,27 @@ test("Let me timesheet that for you!", async ({ page }) => {
 
   await page.waitForURL(/oncoreservices.com\/pages\/ContractorSummary.aspx/);
 
-  await page.getByText(/Edit current timesheet/).click();
+  let startDate;
+
+  if ((await page.getByText(/Submit Timesheet/).all()).length > 0) {
+    startDate = dayjs().utc(true).subtract(1, "M").startOf("M");
+    await page.getByText(/Submit Timesheet/).click();
+  } else {
+    startDate = dayjs().utc(true).startOf("M");
+    await page.getByText(/Edit current timesheet/).click();
+  }
+
   await page.waitForURL(/oncoreservices.com\/pages\/TimesheetSubmit.aspx/);
 
-  let currentDate = dayjs().utc(true).startOf("M");
+  let currentDate = startDate;
 
-  while (!currentDate.isAfter(currentDate.endOf("M"))) {
+  while (!currentDate.isAfter(startDate.endOf("M"))) {
     const dayOfWeek = currentDate.get("d");
     const date = currentDate.format("dddd, MMMM DD, YYYY");
 
-    console.log(`Date is ${date}`);
-
     if (dayOfWeek !== 0 && dayOfWeek !== 6) {
+      console.log(`Date is ${date}`);
+
       await page.getByTitle(/Add new timesheet entry/).click();
 
       const modal = page.locator(".rgEditForm");
